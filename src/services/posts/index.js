@@ -7,6 +7,7 @@ import { CloudinaryStorage } from "multer-storage-cloudinary"
 
 import createError from "http-errors"
 import { readFile, findById, writeFile } from "../../utils/file-utils.js"
+import { generatePDFReadableStream } from "./../../utils/pdf.js"
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -67,10 +68,13 @@ postsRouter.post("/:id/upload", uploadOnCloudinary, async (req, res, next) => {
   try {
     const posts = await readFile("posts.json")
     const targetPostIndex = posts.findIndex((p) => p._id === req.params.id)
-    console.log(targetPostIndex)
     if (targetPostIndex !== -1) {
       const targetPost = posts[targetPostIndex]
-      posts[targetPostIndex] = { ...targetPost, cover: req.file.url }
+      if (req.body.url) {
+        posts[targetPostIndex] = { ...targetPost, cover: req.body.url }
+      } else {
+        posts[targetPostIndex] = { ...targetPost, cover: req.file.path }
+      }
       await writeFile("posts.json", posts)
       res.status(200).send(posts[targetPostIndex])
     } else {
@@ -104,6 +108,23 @@ postsRouter.delete("/:id", async (req, res, next) => {
     const remainingPosts = posts.filter((p) => p._id !== req.params.id)
     await writeFile("posts.json", remainingPosts)
     res.status(204).send()
+  } catch (error) {
+    next(error)
+  }
+})
+
+postsRouter.get("/:id/pdf", async (req, res, next) => {
+  try {
+    const post = await findById(req.params.id, "posts.json")
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${post.title}.pdf`
+    )
+    const pdfStream = await generatePDFReadableStream(post)
+    console.log(pdfStream)
+    pipeline(pdfStream, res, (err) => {
+      if (err) next(err)
+    })
   } catch (error) {
     next(error)
   }
