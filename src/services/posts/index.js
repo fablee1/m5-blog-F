@@ -1,5 +1,6 @@
 import { Router } from "express"
 import uniqid from "uniqid"
+import { pipeline } from "stream"
 
 import multer from "multer"
 import { v2 as cloudinary } from "cloudinary"
@@ -121,7 +122,6 @@ postsRouter.get("/:id/pdf", async (req, res, next) => {
       `attachment; filename=${post.title}.pdf`
     )
     const pdfStream = await generatePDFReadableStream(post)
-    console.log(pdfStream)
     pipeline(pdfStream, res, (err) => {
       if (err) next(err)
     })
