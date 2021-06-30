@@ -43,6 +43,7 @@ export const generatePDFReadableStream = async (post) => {
       {
         image:
           "data:image/jpeg;base64," + (await getImageB64FromUrl(post.cover)),
+        width: 500,
       },
     ],
     styles: {
