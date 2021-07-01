@@ -5,8 +5,18 @@ import { readFile, writeFile, findById } from "../../utils/file-utils.js"
 import createError from "http-errors"
 import postAuthorsMiddlewares from "./../../middlewares/validation/authors/postAuthors.js"
 import putAuthorMiddlewares from "../../middlewares/validation/authors/putAuthors.js"
+import { getAuthorsCsv } from "../../utils/csv.js"
 
 const authorsRouter = Router()
+
+authorsRouter.get("/csv", (req, res, next) => {
+  try {
+    getAuthorsCsv(res)
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+})
 
 authorsRouter.get("/", async (req, res, next) => {
   try {

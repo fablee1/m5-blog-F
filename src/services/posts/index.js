@@ -9,6 +9,7 @@ import { CloudinaryStorage } from "multer-storage-cloudinary"
 import createError from "http-errors"
 import { readFile, findById, writeFile } from "../../utils/file-utils.js"
 import { generatePDFReadableStream } from "./../../utils/pdf.js"
+import { sendMail } from "./../../utils/email.js"
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -77,6 +78,7 @@ postsRouter.post("/:id/upload", uploadOnCloudinary, async (req, res, next) => {
         posts[targetPostIndex] = { ...targetPost, cover: req.file.path }
       }
       await writeFile("posts.json", posts)
+      await sendMail(posts[targetPostIndex])
       res.status(200).send(posts[targetPostIndex])
     } else {
       res.status(400).send({ error: "post does not exist" })
