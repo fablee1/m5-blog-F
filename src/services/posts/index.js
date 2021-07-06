@@ -11,6 +11,8 @@ import { readFile, findById, writeFile } from "../../utils/file-utils.js"
 import { generatePDFReadableStream } from "./../../utils/pdf.js"
 import { sendMail } from "./../../utils/email.js"
 
+import PostModel from "./schema.js"
+
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -18,15 +20,13 @@ const cloudinaryStorage = new CloudinaryStorage({
   },
 })
 
-const uploadOnCloudinary = multer({ storage: cloudinaryStorage }).single(
-  "cover"
-)
+const uploadOnCloudinary = multer({ storage: cloudinaryStorage }).single("cover")
 
 const postsRouter = Router()
 
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const posts = await readFile("posts.json")
+    const posts = await PostModel.find()
     res.send(posts)
   } catch (error) {
     next(error)
@@ -35,7 +35,7 @@ postsRouter.get("/", async (req, res, next) => {
 
 postsRouter.get("/:id", async (req, res, next) => {
   try {
-    const post = await findById(req.params.id, "posts.json")
+    const post = await PostModel.findById(req.params.id)
     res.send(post)
   } catch (error) {
     next(error)
@@ -44,23 +44,17 @@ postsRouter.get("/:id", async (req, res, next) => {
 
 postsRouter.post("/", async (req, res, next) => {
   try {
-    const authors = await readFile("authors.json")
-    const author = authors.find((a) => a._id === req.body.author)
     const readTime = {
       value: (req.body.content.length / 17).toPrecision(1),
       unit: "second",
     }
-    const newPost = {
+    const newPost = new PostModel({
       ...req.body,
-      _id: uniqid(),
-      createdAt: new Date(),
       author,
       readTime,
-    }
-    const posts = await readFile("posts.json")
-    posts.push(newPost)
-    await writeFile("posts.json", posts)
-    res.status(201).send({ _id: newPost._id })
+    })
+    const { _id } = await PostModel.save(newPost)
+    res.status(201).send({ _id })
   } catch (error) {
     next(error)
   }
@@ -68,20 +62,24 @@ postsRouter.post("/", async (req, res, next) => {
 
 postsRouter.post("/:id/upload", uploadOnCloudinary, async (req, res, next) => {
   try {
-    const posts = await readFile("posts.json")
-    const targetPostIndex = posts.findIndex((p) => p._id === req.params.id)
-    if (targetPostIndex !== -1) {
-      const targetPost = posts[targetPostIndex]
-      if (req.body.url) {
-        posts[targetPostIndex] = { ...targetPost, cover: req.body.url }
-      } else {
-        posts[targetPostIndex] = { ...targetPost, cover: req.file.path }
-      }
-      await writeFile("posts.json", posts)
-      await sendMail(posts[targetPostIndex])
-      res.status(200).send(posts[targetPostIndex])
+    let cover
+    if (req.body.url) {
+      cover = req.body.url
     } else {
-      res.status(400).send({ error: "post does not exist" })
+      cover = req.file.path
+    }
+    const postWithCover = await PostModel.findByIdAndUpdate(
+      req.params.id,
+      { cover },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+    if (postWithCover) {
+      res.send(postWithCover)
+    } else {
+      next(createError(404, `Post with _id ${req.params.id} not found!`))
     }
   } catch (error) {
     next(error)
@@ -90,15 +88,14 @@ postsRouter.post("/:id/upload", uploadOnCloudinary, async (req, res, next) => {
 
 postsRouter.put("/:id", async (req, res, next) => {
   try {
-    const posts = await readFile("posts.json")
-    const targetPostIndex = posts.findIndex((p) => p._id === req.params.id)
-    if (targetPostIndex !== -1) {
-      const targetPost = posts[targetPostIndex]
-      posts[targetPostIndex] = { ...targetPost, ...req.body }
-      await writeFile("posts.json", posts)
-      res.status(200).send(posts[targetPostIndex])
+    const updatedPost = await PostModel.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    })
+    if (updatedPost) {
+      res.send(updatedPost)
     } else {
-      res.status(400).send({ error: "post does not exist" })
+      next(createError(404, `User with _id ${req.params.id} not found!`))
     }
   } catch (error) {
     next(error)
@@ -107,9 +104,12 @@ postsRouter.put("/:id", async (req, res, next) => {
 
 postsRouter.delete("/:id", async (req, res, next) => {
   try {
-    const posts = await readFile("posts.json")
-    const remainingPosts = posts.filter((p) => p._id !== req.params.id)
-    await writeFile("posts.json", remainingPosts)
+    const deletedPost = await PostModel.findByIdAndDelete(req.params.id)
+    if (deletedPost) {
+      res.status(204).send()
+    } else {
+      next(createError(404, `Post with _id ${req.params.id} not found!`))
+    }
     res.status(204).send()
   } catch (error) {
     next(error)
@@ -119,10 +119,7 @@ postsRouter.delete("/:id", async (req, res, next) => {
 postsRouter.get("/:id/pdf", async (req, res, next) => {
   try {
     const post = await findById(req.params.id, "posts.json")
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=${post.title}.pdf`
-    )
+    res.setHeader("Content-Disposition", `attachment; filename=${post.title}.pdf`)
     const pdfStream = await generatePDFReadableStream(post)
     pipeline(pdfStream, res, (err) => {
       if (err) next(err)

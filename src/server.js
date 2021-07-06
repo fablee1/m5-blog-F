@@ -4,6 +4,7 @@ import listEndpoints from "express-list-endpoints"
 import cors from "cors"
 import createError from "http-errors"
 import morgan from "morgan"
+import mongoose from "mongoose"
 
 import authorsRouter from "./services/authors/index.js"
 import postsRouter from "./services/posts/index.js"
@@ -43,6 +44,15 @@ server.use((req, res) => {
   }
 })
 
-server.listen(port, () => {
-  console.log("Server is running on port " + port)
-})
+mongoose
+  .connect(process.env.MONGO_CONNECTION, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useFindAndModify: false,
+  })
+  .then(() =>
+    server.listen(port, () => {
+      console.log("Server running on port ", port)
+    })
+  )
+  .catch((err) => console.log(err))

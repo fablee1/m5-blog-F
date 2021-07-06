@@ -74,6 +74,10 @@ export const streamToBase64 = (stream) => {
       resolve(base64)
     }
 
+    pipeline(stream, base64, concat(cbConcat), (err) => {
+      if (error) reject(error)
+    })
+
     stream
       .pipe(base64)
       .pipe(concat(cbConcat))
