@@ -23,7 +23,7 @@ const postsRouter = Router()
 
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const posts = await PostModel.find()
+    const posts = await PostModel.find().populate("author")
     res.send(posts)
   } catch (error) {
     next(error)
