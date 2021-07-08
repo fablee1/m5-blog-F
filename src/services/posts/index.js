@@ -1,5 +1,4 @@
 import { Router } from "express"
-import uniqid from "uniqid"
 import { pipeline } from "stream"
 
 import multer from "multer"
@@ -7,9 +6,7 @@ import { v2 as cloudinary } from "cloudinary"
 import { CloudinaryStorage } from "multer-storage-cloudinary"
 
 import createError from "http-errors"
-import { readFile, findById, writeFile } from "../../utils/file-utils.js"
 import { generatePDFReadableStream } from "./../../utils/pdf.js"
-import { sendMail } from "./../../utils/email.js"
 
 import PostModel from "./schema.js"
 
@@ -35,7 +32,7 @@ postsRouter.get("/", async (req, res, next) => {
 
 postsRouter.get("/:id", async (req, res, next) => {
   try {
-    const post = await PostModel.findById(req.params.id)
+    const post = await PostModel.findById(req.params.id).populate("author")
     res.send(post)
   } catch (error) {
     next(error)
@@ -50,12 +47,12 @@ postsRouter.post("/", async (req, res, next) => {
     }
     const newPost = new PostModel({
       ...req.body,
-      author,
       readTime,
     })
-    const { _id } = await PostModel.save(newPost)
+    const { _id } = await newPost.save(newPost)
     res.status(201).send({ _id })
   } catch (error) {
+    console.log(error)
     next(error)
   }
 })

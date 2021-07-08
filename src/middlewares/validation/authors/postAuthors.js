@@ -2,6 +2,7 @@ import { checkSchema, validationResult } from "express-validator"
 import { readFile } from "../../../utils/file-utils.js"
 import createError from "http-errors"
 import { filterAuthorsBody } from "../../sanitize/authors/authorsSanitize.js"
+import AuthorModel from "../../../services/authors/schema.js"
 
 const schema = {
   name: {
@@ -56,14 +57,12 @@ const validatePostAuthorSchema = (req, res, next) => {
 }
 
 const checkAuthorEmailExists = async (req, res, next) => {
-  const authors = await readFile("authors.json")
-  if (!authors.some((a) => a.email === req.body.email)) {
-    res.locals.authors = authors
+  const author = await AuthorModel.findOne({ email: req.body.email })
+  if (!author) {
+    res.locals.authors = author
     next()
   } else {
-    next(
-      createError(404, `Author with email ${req.body.email} already exists!`)
-    )
+    next(createError(404, `Author with email ${req.body.email} already exists!`))
   }
 }
 
