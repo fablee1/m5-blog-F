@@ -6,6 +6,7 @@ import putAuthorMiddlewares from "../../middlewares/validation/authors/putAuthor
 import { getAuthorsCsv } from "../../utils/csv.js"
 
 import AuthorModel from "./schema.js"
+import db from "../../utils/db.js"
 
 const authorsRouter = Router()
 
@@ -20,8 +21,9 @@ authorsRouter.get("/csv", (req, res, next) => {
 
 authorsRouter.get("/", async (req, res, next) => {
   try {
-    const authors = await AuthorModel.find()
-    res.send(authors)
+    const query = "SELECT * FROM authors ORDER BY created_at DESC"
+    const data = await db.query(query)
+    res.send(data.rows)
   } catch (error) {
     next(error)
   }
