@@ -31,8 +31,9 @@ authorsRouter.get("/", async (req, res, next) => {
 
 authorsRouter.get("/:id", async (req, res, next) => {
   try {
-    const author = await AuthorModel.findById(req.params.id)
-    res.send(author)
+    const query = `SELECT * FROM tutors WHERE tutor_id=${req.params.id}`
+    const data = await db.query(query)
+    res.send(data.rows[0])
   } catch (error) {
     next(error)
   }
