@@ -18,11 +18,11 @@ export default (sequelize, DataTypes) => {
       allowNull: true,
     },
     read_time_value: {
-      type: DataTypes.TEXT,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     read_time_unit: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     author: {

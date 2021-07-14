@@ -26,7 +26,7 @@ const postsRouter = Router()
 
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const posts = await PostModel.find().populate("author")
+    const posts = await Post.findAll()
     res.send(posts)
   } catch (error) {
     next(error)
@@ -35,7 +35,7 @@ postsRouter.get("/", async (req, res, next) => {
 
 postsRouter.get("/:id", async (req, res, next) => {
   try {
-    const post = await PostModel.findById(req.params.id).populate("author")
+    const post = await Post.findAll({ where: { id: req.params.id } })
     res.send(post)
   } catch (error) {
     next(error)
@@ -45,12 +45,12 @@ postsRouter.get("/:id", async (req, res, next) => {
 postsRouter.post("/", async (req, res, next) => {
   try {
     const readTime = {
-      value: (req.body.content.length / 17).toPrecision(1),
-      unit: "second",
+      read_time_value: parseInt((req.body.content.length / 17).toPrecision(1)),
+      read_time_unit: "second",
     }
     const newPost = await Post.create({
       ...req.body,
-      readTime,
+      ...readTime,
     })
     res.status(201).send({ newPost })
   } catch (error) {
