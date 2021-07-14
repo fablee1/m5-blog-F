@@ -5,6 +5,7 @@ import cors from "cors"
 import createError from "http-errors"
 import morgan from "morgan"
 import mongoose from "mongoose"
+import db from "./db/index.js"
 
 import authorsRouter from "./services/authors/index.js"
 import postsRouter from "./services/posts/index.js"
@@ -44,15 +45,14 @@ server.use((req, res) => {
   }
 })
 
-mongoose
-  .connect(process.env.MONGO_CONNECTION, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false,
+db.sequelize
+  .sync({ force: false })
+  .then(() => {
+    server.listen(port, () => console.log("server is running: " + port))
+    server.on("error", (error) =>
+      console.info(" ❌ Server is not running due to : ", error)
+    )
   })
-  .then(() =>
-    server.listen(port, () => {
-      console.log("Server running on port ", port)
-    })
-  )
-  .catch((err) => console.log(err))
+  .catch((e) => {
+    console.log(e)
+  })

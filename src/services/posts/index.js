@@ -9,6 +9,9 @@ import createError from "http-errors"
 import { generatePDFReadableStream } from "./../../utils/pdf.js"
 
 import PostModel from "./schema.js"
+import models from "../../db/index.js"
+
+const Post = models.Post
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -45,12 +48,11 @@ postsRouter.post("/", async (req, res, next) => {
       value: (req.body.content.length / 17).toPrecision(1),
       unit: "second",
     }
-    const newPost = new PostModel({
+    const newPost = await Post.create({
       ...req.body,
       readTime,
     })
-    const { _id } = await newPost.save(newPost)
-    res.status(201).send({ _id })
+    res.status(201).send({ newPost })
   } catch (error) {
     console.log(error)
     next(error)
