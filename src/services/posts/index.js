@@ -107,13 +107,12 @@ postsRouter.put("/:id", basicAuthMiddleware, async (req, res, next) => {
 
 postsRouter.delete("/:id", basicAuthMiddleware, async (req, res, next) => {
   try {
-    const deletedPost = await PostModel.findByIdAndDelete(req.params.id)
+    const post = await PostModel.findById(req.params.id)
     if (deletedPost) {
       res.status(204).send()
     } else {
       next(createError(404, `Post with _id ${req.params.id} not found!`))
     }
-    res.status(204).send()
   } catch (error) {
     next(error)
   }

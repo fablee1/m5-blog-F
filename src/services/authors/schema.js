@@ -1,4 +1,5 @@
 import mongoose from "mongoose"
+import bcrypt from "bcrypt"
 
 const { Schema, model } = mongoose
 
@@ -52,7 +53,7 @@ AuthorSchema.statics.checkCredentials = async function (email, plainPW) {
   const user = await this.findOne({ email })
   if (user) {
     const isMatch = await bcrypt.compare(plainPW, user.password)
-    isMatch ? user : null
+    return isMatch ? user : null
   } else {
     return null
   }
