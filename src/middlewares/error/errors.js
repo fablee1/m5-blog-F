@@ -37,7 +37,7 @@ const catchErrorMiddleware = (err, req, res, next) => {
 export const errorMiddlewares = [
   notFoundMiddleware,
   badRequestMiddleware,
-  catchErrorMiddleware,
   forbiddenHandler,
   unAuthorizedHandler,
+  catchErrorMiddleware,
 ]
