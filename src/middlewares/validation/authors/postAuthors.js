@@ -1,5 +1,4 @@
 import { checkSchema, validationResult } from "express-validator"
-import { readFile } from "../../../utils/file-utils.js"
 import createError from "http-errors"
 import { filterAuthorsBody } from "../../sanitize/authors/authorsSanitize.js"
 import AuthorModel from "../../../services/authors/schema.js"
@@ -30,6 +29,12 @@ const schema = {
     },
     isEmail: {
       errorMessage: "Email must be a valid one!",
+    },
+  },
+  password: {
+    in: ["body"],
+    exists: {
+      errorMessage: "Password is mandatory",
     },
   },
   dob: {
