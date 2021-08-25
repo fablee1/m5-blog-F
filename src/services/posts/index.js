@@ -9,7 +9,7 @@ import createError from "http-errors"
 import { generatePDFReadableStream } from "./../../utils/pdf.js"
 
 import PostModel from "./schema.js"
-import { basicAuthMiddleware } from "../../auth/basic.js"
+import { JWTAuth } from "../../auth/middlewares.js"
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -40,7 +40,7 @@ postsRouter.get("/:id", async (req, res, next) => {
   }
 })
 
-postsRouter.post("/", basicAuthMiddleware, async (req, res, next) => {
+postsRouter.post("/", JWTAuth, async (req, res, next) => {
   try {
     const readTime = {
       value: (req.body.content.length / 17).toPrecision(1),
@@ -58,38 +58,33 @@ postsRouter.post("/", basicAuthMiddleware, async (req, res, next) => {
   }
 })
 
-postsRouter.post(
-  "/:id/upload",
-  basicAuthMiddleware,
-  uploadOnCloudinary,
-  async (req, res, next) => {
-    try {
-      let cover
-      if (req.body.url) {
-        cover = req.body.url
-      } else {
-        cover = req.file.path
-      }
-      const postWithCover = await PostModel.findByIdAndUpdate(
-        req.params.id,
-        { cover },
-        {
-          new: true,
-          runValidators: true,
-        }
-      )
-      if (postWithCover) {
-        res.send(postWithCover)
-      } else {
-        next(createError(404, `Post with _id ${req.params.id} not found!`))
-      }
-    } catch (error) {
-      next(error)
+postsRouter.post("/:id/upload", JWTAuth, uploadOnCloudinary, async (req, res, next) => {
+  try {
+    let cover
+    if (req.body.url) {
+      cover = req.body.url
+    } else {
+      cover = req.file.path
     }
+    const postWithCover = await PostModel.findByIdAndUpdate(
+      req.params.id,
+      { cover },
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
+    if (postWithCover) {
+      res.send(postWithCover)
+    } else {
+      next(createError(404, `Post with _id ${req.params.id} not found!`))
+    }
+  } catch (error) {
+    next(error)
   }
-)
+})
 
-postsRouter.put("/:id", basicAuthMiddleware, async (req, res, next) => {
+postsRouter.put("/:id", JWTAuth, async (req, res, next) => {
   try {
     const updatedPost = await PostModel.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -105,7 +100,7 @@ postsRouter.put("/:id", basicAuthMiddleware, async (req, res, next) => {
   }
 })
 
-postsRouter.delete("/:id", basicAuthMiddleware, async (req, res, next) => {
+postsRouter.delete("/:id", JWTAuth, async (req, res, next) => {
   try {
     const post = await PostModel.findById(req.params.id)
     if (deletedPost) {

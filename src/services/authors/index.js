@@ -4,6 +4,7 @@ import createError from "http-errors"
 import postAuthorsMiddlewares from "./../../middlewares/validation/authors/postAuthors.js"
 import putAuthorMiddlewares from "../../middlewares/validation/authors/putAuthors.js"
 import { getAuthorsCsv } from "../../utils/csv.js"
+import { JWTAuth } from "../../auth/middlewares.js"
 
 import AuthorModel from "./schema.js"
 
@@ -18,7 +19,7 @@ authorsRouter.get("/csv", (req, res, next) => {
   }
 })
 
-authorsRouter.get("/", async (req, res, next) => {
+authorsRouter.get("/", JWTAuth, async (req, res, next) => {
   try {
     const authors = await AuthorModel.find()
     res.send(authors)
@@ -27,7 +28,7 @@ authorsRouter.get("/", async (req, res, next) => {
   }
 })
 
-authorsRouter.get("/:id", async (req, res, next) => {
+authorsRouter.get("/:id", JWTAuth, async (req, res, next) => {
   try {
     const author = await AuthorModel.findById(req.params.id)
     res.send(author)
@@ -36,7 +37,7 @@ authorsRouter.get("/:id", async (req, res, next) => {
   }
 })
 
-authorsRouter.post("/", postAuthorsMiddlewares, async (req, res, next) => {
+authorsRouter.post("/", JWTAuth, postAuthorsMiddlewares, async (req, res, next) => {
   try {
     const avatar = `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`
     const newUser = new AuthorModel({
@@ -50,7 +51,7 @@ authorsRouter.post("/", postAuthorsMiddlewares, async (req, res, next) => {
   }
 })
 
-authorsRouter.put("/:id", putAuthorMiddlewares, async (req, res, next) => {
+authorsRouter.put("/:id", JWTAuth, putAuthorMiddlewares, async (req, res, next) => {
   try {
     const updatedAuthor = await AuthorModel.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -66,7 +67,7 @@ authorsRouter.put("/:id", putAuthorMiddlewares, async (req, res, next) => {
   }
 })
 
-authorsRouter.delete("/:id", async (req, res, next) => {
+authorsRouter.delete("/:id", JWTAuth, async (req, res, next) => {
   try {
     const deletedAuthor = await AuthorModel.findByIdAndDelete(req.params.id)
     if (deletedAuthor) {
@@ -109,15 +110,15 @@ authorsRouter.post("/login", async (req, res, next) => {
 
 authorsRouter.post("/refreshToken", async (req, res, next) => {
   try {
-    const { refreshToken } = req.body
-    const { accessToken, refreshToken } = await refreshTokens(refreshToken)
+    const { refreshTokenOld } = req.body
+    const { accessToken, refreshToken } = await refreshTokens(refreshTokenOld)
     res.send({ accessToken, refreshToken })
   } catch (error) {
     next(error)
   }
 })
 
-authorsRouter.post("/logout", JWTAuthMiddleware, async (req, res, next) => {
+authorsRouter.post("/logout", JWTAuth, async (req, res, next) => {
   try {
     req.user.refreshToken = null
     await req.user.save()
@@ -131,7 +132,7 @@ authorsRouter.post("/register", async (req, res, next) => {
   try {
     const user = await AuthorModel.findOne({ email: req.body.email })
     if (user) {
-      next(createError(401, ""))
+      next(createError(401, "User with this email already exists"))
     } else {
       const newUser = new AuthorModel(req.body)
       const { _id } = await newUser.save()
