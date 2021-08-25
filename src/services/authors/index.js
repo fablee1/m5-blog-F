@@ -92,4 +92,54 @@ authorsRouter.post("/checkEmail", async (req, res, next) => {
   }
 })
 
+authorsRouter.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body
+    const user = await AuthorModel.checkCredentials(email, password)
+    if (user) {
+      const { accessToken, refreshToken } = await JWTAuthenticate(user)
+      res.send({ accessToken, refreshToken })
+    } else {
+      next(createError(401, "Credentials not valid!"))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
+authorsRouter.post("/refreshToken", async (req, res, next) => {
+  try {
+    const { refreshToken } = req.body
+    const { accessToken, refreshToken } = await refreshTokens(refreshToken)
+    res.send({ accessToken, refreshToken })
+  } catch (error) {
+    next(error)
+  }
+})
+
+authorsRouter.post("/logout", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    req.user.refreshToken = null
+    await req.user.save()
+    res.send()
+  } catch (error) {
+    next(error)
+  }
+})
+
+authorsRouter.post("/register", async (req, res, next) => {
+  try {
+    const user = await AuthorModel.findOne({ email: req.body.email })
+    if (user) {
+      next(createError(401, ""))
+    } else {
+      const newUser = new AuthorModel(req.body)
+      const { _id } = await newUser.save()
+      res.status(201).send({ _id })
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
 export default authorsRouter
