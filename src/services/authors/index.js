@@ -5,6 +5,7 @@ import postAuthorsMiddlewares from "./../../middlewares/validation/authors/postA
 import putAuthorMiddlewares from "../../middlewares/validation/authors/putAuthors.js"
 import { getAuthorsCsv } from "../../utils/csv.js"
 import { JWTAuth } from "../../auth/middlewares.js"
+import { JWTAuthenticate, refreshToken } from "../../auth/tools.js"
 
 import AuthorModel from "./schema.js"
 
@@ -37,15 +38,17 @@ authorsRouter.get("/:id", JWTAuth, async (req, res, next) => {
   }
 })
 
-authorsRouter.post("/", JWTAuth, postAuthorsMiddlewares, async (req, res, next) => {
+authorsRouter.post("/register", postAuthorsMiddlewares, async (req, res, next) => {
   try {
-    const avatar = `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`
-    const newUser = new AuthorModel({
-      ...req.body,
-      avatar,
-    })
-    const { _id } = await newUser.save(newUser)
-    res.status(201).send({ _id })
+    const user = await AuthorModel.findOne({ email: req.body.email })
+    if (user) {
+      next(createError(401, "User with this email already exists"))
+    } else {
+      const avatar = `https://ui-avatars.com/api/?name=${req.body.name}+${req.body.surname}`
+      const newUser = new AuthorModel({ ...req.body, avatar })
+      const { _id } = await newUser.save()
+      res.status(201).send({ _id })
+    }
   } catch (error) {
     next(error)
   }
@@ -97,6 +100,7 @@ authorsRouter.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body
     const user = await AuthorModel.checkCredentials(email, password)
+    console.log("1")
     if (user) {
       const { accessToken, refreshToken } = await JWTAuthenticate(user)
       res.send({ accessToken, refreshToken })
@@ -104,6 +108,7 @@ authorsRouter.post("/login", async (req, res, next) => {
       next(createError(401, "Credentials not valid!"))
     }
   } catch (error) {
+    console.log(error)
     next(error)
   }
 })
@@ -111,7 +116,7 @@ authorsRouter.post("/login", async (req, res, next) => {
 authorsRouter.post("/refreshToken", async (req, res, next) => {
   try {
     const { refreshTokenOld } = req.body
-    const { accessToken, refreshToken } = await refreshTokens(refreshTokenOld)
+    const { accessToken, refreshToken } = await refreshToken(refreshTokenOld)
     res.send({ accessToken, refreshToken })
   } catch (error) {
     next(error)
@@ -123,21 +128,6 @@ authorsRouter.post("/logout", JWTAuth, async (req, res, next) => {
     req.user.refreshToken = null
     await req.user.save()
     res.send()
-  } catch (error) {
-    next(error)
-  }
-})
-
-authorsRouter.post("/register", async (req, res, next) => {
-  try {
-    const user = await AuthorModel.findOne({ email: req.body.email })
-    if (user) {
-      next(createError(401, "User with this email already exists"))
-    } else {
-      const newUser = new AuthorModel(req.body)
-      const { _id } = await newUser.save()
-      res.status(201).send({ _id })
-    }
   } catch (error) {
     next(error)
   }
