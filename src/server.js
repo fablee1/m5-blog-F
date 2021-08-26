@@ -9,9 +9,14 @@ import mongoose from "mongoose"
 import authorsRouter from "./services/authors/index.js"
 import postsRouter from "./services/posts/index.js"
 import { errorMiddlewares } from "./middlewares/error/errors.js"
+import cookieParser from "cookie-parser"
+import passport from "passport"
+import googleStrategy from "./auth/oauth.js"
 
 const port = process.env.PORT || 3001
 const server = express()
+
+passport.use("google", googleStrategy)
 
 // Middlewares
 const whitelist = [process.env.FRONTEND_URL, process.env.FRONTEND_PROD_URL]
@@ -25,8 +30,11 @@ server.use(
         callback(new Error("Not allowed by cors!"))
       }
     },
+    credentials: true,
   })
 )
+server.use(cookieParser())
+server.use(passport.initialize())
 server.use(express.json())
 server.use(morgan("dev"))
 

@@ -6,10 +6,32 @@ import putAuthorMiddlewares from "../../middlewares/validation/authors/putAuthor
 import { getAuthorsCsv } from "../../utils/csv.js"
 import { JWTAuth } from "../../auth/middlewares.js"
 import { JWTAuthenticate, refreshToken } from "../../auth/tools.js"
+import passport from "passport"
 
 import AuthorModel from "./schema.js"
 
 const authorsRouter = Router()
+
+authorsRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+)
+
+authorsRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google"),
+  async (req, res, next) => {
+    try {
+      res.cookie("accessToken", req.user.tokens.accessToken, {
+        httpOnly: true,
+      })
+      res.cookie("refreshToken", req.user.tokens.refreshToken, { httpOnly: true })
+      res.redirect(`http://localhost:3000`)
+    } catch (error) {
+      next(error)
+    }
+  }
+)
 
 authorsRouter.get("/csv", (req, res, next) => {
   try {

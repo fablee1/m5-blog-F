@@ -32,6 +32,10 @@ const schema = {
       errorMessage: "DOB must be a date",
     },
   },
+  googleId: {
+    in: ["body"],
+    optional: { options: { nullable: true } },
+  },
 }
 const checkPutAuthorSchema = checkSchema(schema)
 
@@ -51,17 +55,13 @@ const checkPutEmailExists = async (req, res, next) => {
   const authors = await readFile("authors.json")
   if (
     req.body.email
-      ? !authors.some(
-          (a) => a.email === req.body.email && a._id !== req.params.id
-        )
+      ? !authors.some((a) => a.email === req.body.email && a._id !== req.params.id)
       : true
   ) {
     res.locals.authors = authors
     next()
   } else {
-    next(
-      createError(404, `Author with email ${req.body.email} does not exist!`)
-    )
+    next(createError(404, `Author with email ${req.body.email} does not exist!`))
   }
 }
 

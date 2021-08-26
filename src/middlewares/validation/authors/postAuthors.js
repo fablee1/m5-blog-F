@@ -46,6 +46,10 @@ const schema = {
       errorMessage: "DOB must be a date",
     },
   },
+  googleId: {
+    in: ["body"],
+    optional: { options: { nullable: true } },
+  },
 }
 const checkPostAuthorSchema = checkSchema(schema)
 
