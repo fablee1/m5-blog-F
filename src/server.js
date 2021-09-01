@@ -5,6 +5,7 @@ import cors from "cors"
 import createError from "http-errors"
 import morgan from "morgan"
 import mongoose from "mongoose"
+import { createServer } from "http"
 
 import authorsRouter from "./services/authors/index.js"
 import postsRouter from "./services/posts/index.js"
@@ -52,6 +53,8 @@ server.use((req, res) => {
   }
 })
 
+export const app = createServer(server)
+
 mongoose
   .connect(process.env.MONGO_CONNECTION, {
     useNewUrlParser: true,
@@ -59,7 +62,7 @@ mongoose
     useFindAndModify: false,
   })
   .then(() =>
-    server.listen(port, () => {
+    app.listen(port, () => {
       console.log("Server running on port ", port)
     })
   )

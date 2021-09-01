@@ -122,10 +122,14 @@ authorsRouter.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body
     const user = await AuthorModel.checkCredentials(email, password)
-    console.log("1")
     if (user) {
       const { accessToken, refreshToken } = await JWTAuthenticate(user)
-      res.send({ accessToken, refreshToken })
+      // res.send({ accessToken, refreshToken })
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+      })
+      res.cookie("refreshToken", refreshToken, { httpOnly: true })
+      res.redirect(`http://localhost:3000`)
     } else {
       next(createError(401, "Credentials not valid!"))
     }

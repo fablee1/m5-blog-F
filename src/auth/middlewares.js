@@ -3,11 +3,11 @@ import { verifyJWT } from "./tools.js"
 import AuthorModel from "../services/authors/schema.js"
 
 export const JWTAuth = async (req, res, next) => {
-  if (!req.headers.authorization) {
+  if (!req.cookies.accessToken) {
     next(createError(401, "Please provide credentials in the Authorization header!"))
   } else {
     try {
-      const token = req.headers.authorization.replace("Bearer ", "")
+      const token = req.cookies.accessToken
       const data = await verifyJWT(token)
       const user = await AuthorModel.findById(data._id)
       if (user) {

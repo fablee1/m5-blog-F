@@ -27,7 +27,6 @@ const googleStrategy = new GoogleStrategy(
         const createdUser = new UserModel(newUser)
 
         const savedUser = await createdUser.save()
-        console.log("ok")
         const tokens = await JWTAuthenticate(savedUser)
         passportNext(null, { user: savedUser, tokens })
       }
